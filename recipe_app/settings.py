@@ -170,10 +170,8 @@ SIMPLE_JWT = {
 }
 
 
-from cloudinary_storage.storage import MediaCloudinaryStorage
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
-
-DEFAULT_FILE_STORAGE =MediaCloudinaryStorage
 
 import os
 
