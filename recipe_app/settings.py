@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'recipe_app.wsgi.application'
 
 import dj_database_url
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('postgresql://recipe_db_zfv3_user:fQTqnTIFAXWx6l3ZkjLjTR7IhCG8O6z8@dpg-d0unlmk9c44c73bh2sf0-a/recipe_db_zfv3'))
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
 
 
