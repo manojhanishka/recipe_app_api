@@ -5,7 +5,7 @@ services:
     buildCommand: |
       python manage.py migrate
       python manage.py collectstatic --noinput
-    startCommand: gunicorn your_project_name.wsgi:application
+    startCommand: gunicorn recipe_app.wsgi:application
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
