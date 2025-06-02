@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 REST_FRAMEWORK = {
@@ -90,10 +92,21 @@ WSGI_APPLICATION = 'recipe_app.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 import dj_database_url
+<<<<<<< HEAD
 DATABASES = {
     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
+=======
+import os
+>>>>>>> f5ab22e (updated)
 
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
 
 
 
@@ -151,4 +164,17 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,  # Refreshing generates a new refresh token
     'BLACKLIST_AFTER_ROTATION': True,  # Blacklist old refresh tokens after use
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",)
+}
+
+
+import cloudinary_storage
+
+DEFAULT_FILE_STORAGE =cloudinary_storage.storage.MediaCloudinaryStorage
+
+import os
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUD_API'),
+    'API_SECRET': os.getenv('CLOUD_SECRET'),
 }
