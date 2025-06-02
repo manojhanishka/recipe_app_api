@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from cloudinary.models import CloudinaryField
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, username, phone, password=None, **extra_fields):
@@ -28,7 +29,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     phone = models.CharField(max_length=15, unique=True)
     
     # ⬇ Change from URLField to ImageField
-    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_pic = CloudinaryField('image', blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -92,7 +93,7 @@ class Recipe(models.Model):
     dietary_restrictions = models.ManyToManyField(DietaryRestriction, blank=True, related_name="recipes")
     ingredients_notes = models.TextField(blank=True, null=True)
     cooking_tips = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to='recipe_images/', blank=True, null=True)
+    image = CloudinaryField('image', blank=True, null=True)
     source = models.CharField(max_length=255, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     tags = models.ManyToManyField(Tag, related_name='recipes')

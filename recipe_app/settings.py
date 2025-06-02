@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 from pathlib import Path
 import os
@@ -28,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-1+surifu4ppioa%hs-=4(iq(&yw+=r%)-h^vx^v302&ax!mrt6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']  # Replace with your actual local IP
 
@@ -99,12 +100,6 @@ WSGI_APPLICATION = 'recipe_app.wsgi.application'
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
-}
-
-
-
-DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv("DATABASE_URL"),
         conn_max_age=600,
@@ -168,17 +163,27 @@ SIMPLE_JWT = {
 }
 
 
-DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 
-import os
+import cloudinary
 
+cloudinary.config(
+    cloud_name=os.getenv('CLOUD_NAME'),
+    api_key=os.getenv('CLOUD_API'),
+    api_secret=os.getenv('CLOUD_SECRET'),
+)
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv('CLOUD_NAME'),
-    'API_KEY': os.getenv('CLOUD_API'),
-    'API_SECRET': os.getenv('CLOUD_SECRET'),
+    'cloud_name': os.getenv('CLOUD_NAME'),
+    'api_key': os.getenv('CLOUD_API'),
+    'api_secret': os.getenv('CLOUD_SECRET'),
 }
+
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 print("Default File Storage:", DEFAULT_FILE_STORAGE)
+print("Cloud Name:", os.getenv("CLOUD_NAME"))
+print("Cloud API:", os.getenv("CLOUD_API"))
+print("Cloud Secret:", os.getenv("CLOUD_SECRET"))
+from django.core.files.storage import default_storage
+
+print(default_storage.__class__)
