@@ -5,3 +5,5 @@ __pycache__/
 # Ignore environment files
 .env
 
+__pycache__/
+*.pyc
