@@ -155,8 +155,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#MEDIA_URL = '/media/'
-#MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 AUTH_USER_MODEL = 'api.CustomUser'
 
 from datetime import timedelta
@@ -180,3 +178,7 @@ CLOUDINARY_STORAGE = {
     'API_KEY': os.getenv('CLOUD_API'),
     'API_SECRET': os.getenv('CLOUD_SECRET'),
 }
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+print("Default File Storage:", DEFAULT_FILE_STORAGE)
