@@ -172,13 +172,14 @@ def search_recipes(request):
     # Annotate fields to lowercase and then filter
     recipes = Recipe.objects.annotate(
         lower_title=Lower('title'),
-        lower_cuisine=Lower('cuisine'),
-        lower_course=Lower('course')
+        lower_cuisine_name=Lower('cuisine__name'),
+        lower_course_name=Lower('course__name')
     ).filter(
         Q(lower_title__icontains=query) |
-        Q(lower_cuisine__icontains=query) |
-        Q(lower_course__icontains=query)
+        Q(lower_cuisine_name__icontains=query) |
+        Q(lower_course_name__icontains=query)
     ).distinct()
+
 
     serializer = RecipeSerializer(recipes, many=True,context={'request': request})
     return Response(serializer.data)
