@@ -3,7 +3,7 @@ from .views import hello_world
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import (RegisterUserView,LoginView,UserProfileView,AddRecipeView,
+from .views import (RegisterUserView,LoginView,UserProfileView,AddRecipeView,GoogleLoginAPIView,
                     save_recipe,remove_saved_recipe,get_saved_recipes,get_all_recipes,
                     get_recipe,check_saved_recipe,get_recommendations,get_similar_recipes,
                     SortedRecipeListView,RecipeFilteredByUserPreferenceView,search_recipes,ProfileImageListView,
@@ -15,6 +15,7 @@ from .views import (RegisterUserView,LoginView,UserProfileView,AddRecipeView,
 urlpatterns = [
     path('hello/', hello_world, name='hello'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/google-login/', GoogleLoginAPIView.as_view(), name='google-login'),
     path('register/', RegisterUserView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('profile/', UserProfileView.as_view(), name='profile'),

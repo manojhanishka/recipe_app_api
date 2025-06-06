@@ -21,6 +21,11 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Recipe,SavedRecipe
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.db.models.functions import Lower
 from django.db.models import Case, When
 from .utils import Preprocess
@@ -45,6 +50,51 @@ class LoginView(APIView):
         if serializer.is_valid():
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+User = get_user_model()
+
+class GoogleLoginAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        token = request.data.get('id_token')
+
+        if not token:
+            return Response({'error': 'ID token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Verify token using Google
+            idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_CLIENT_ID)
+
+            email = idinfo.get('email')
+            name = idinfo.get('name')
+
+            if not email:
+                return Response({'error': 'Email not found in Google token'}, status=400)
+
+            # Create or get user
+            user, created = User.objects.get_or_create(email=email, defaults={
+                'username': name or email.split('@')[0],
+                'phone': '0000000000',  # default/fake phone - you can update later
+
+            })
+
+            # Generate tokens
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': {
+                    'username': user.username,
+                    'email': user.email,
+                }
+            })
+
+        except ValueError:
+            return Response({'error': 'Invalid Google token'}, status=status.HTTP_400_BAD_REQUEST)
+
     
 
 class UserProfileView(APIView):
