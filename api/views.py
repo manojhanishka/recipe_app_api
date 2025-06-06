@@ -76,7 +76,7 @@ class GoogleLoginAPIView(APIView):
 
             # Create or get user
             user, created = User.objects.get_or_create(email=email, defaults={
-                'username': name or email.split('@')[0],
+                'username': f"{email.split('@')[0]}_{User.objects.count()}",
                 'phone': '0000000000',  # default/fake phone - you can update later
 
             })
