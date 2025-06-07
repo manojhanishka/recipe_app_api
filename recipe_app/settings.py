@@ -95,7 +95,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'recipe_app.wsgi.application'
-GOOGLE_CLIENT_ID="46655818639-vm91chvigcct1o1qu40s5149274nullf.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID="46655818639-a9cp2iijupnm19nkfd7k5sv3ciqr1neq.apps.googleusercontent.com"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
