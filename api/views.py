@@ -88,10 +88,9 @@ class GoogleLoginAPIView(APIView):
 
     def post(self, request):
         token = request.data.get('id_token')
-        phone = request.data.get('phone')  # Collect from frontend
 
-        if not token or not phone:
-            return Response({'error': 'ID token and phone are required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not token:
+            return Response({'error': 'ID token is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_CLIENT_ID)
@@ -102,22 +101,13 @@ class GoogleLoginAPIView(APIView):
             if not email:
                 return Response({'error': 'Email not found in Google token'}, status=400)
 
-            # Check if phone already used by someone else
-            if User.objects.filter(phone=phone).exclude(email=email).exists():
-                return Response({'error': 'Phone number already in use'}, status=400)
-
             # Create or get user
             user, created = User.objects.get_or_create(email=email, defaults={
                 'username': f"{email.split('@')[0]}_{User.objects.count()}",
-                'phone': phone,
                 'email_verified': True,  # ✅ TRUST GOOGLE
                 'is_active': True 
             })
 
-            # If user exists but phone is not set, update it
-            if not created and not user.phone:
-                user.phone = phone
-                user.save()
 
             refresh = RefreshToken.for_user(user)
             return Response({
