@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Email Verification</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto; }
+        h1 { color: #333; }
+        .code { font-size: 28px; font-weight: bold; color: #2E86C1; letter-spacing: 4px; }
+        .footer { font-size: 12px; color: #777; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to {{ app_name }}!</h1>
+        <p>Thank you for registering. To complete your registration, please verify your email address using the verification code below:</p>
+        <p class="code">{{ code }}</p>
+        <p>If you did not sign up for {{ app_name }}, please ignore this email.</p>
+        <div class="footer">
+            <p>If you need help, contact us at <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</p>
+        </div>
+    </div>
+</body>
+</html>

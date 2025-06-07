@@ -182,11 +182,12 @@ CLOUDINARY_STORAGE = {
 }
 
 MEDIA_URL = '/media/'
+from decouple import os
 
-print("Default File Storage:", DEFAULT_FILE_STORAGE)
-print("Cloud Name:", os.getenv("CLOUD_NAME"))
-print("Cloud API:", os.getenv("CLOUD_API"))
-print("Cloud Secret:", os.getenv("CLOUD_SECRET"))
-from django.core.files.storage import default_storage
-
-print(default_storage.__class__)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # App password (not your Gmail password)
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

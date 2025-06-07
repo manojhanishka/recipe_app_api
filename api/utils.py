@@ -1,10 +1,29 @@
 import pandas as pd
 import re
-from .models import Recipe,CustomUser,SavedRecipe
+from .models import Recipe,CustomUser,SavedRecipe,Ingredient
+import numpy as np # Replace with your actual app name
+import inflect
+import random
+from django.core.mail import send_mail
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+
+p = inflect.engine()
+
 
 class Preprocess:
 
     def __preprocess_ingredients(self,x):
+        x=list(x)
+        for i in range(len(x)):
+            x[i] = re.sub(r'\([^)]*\)', '', x[i])
+            x[i]=x[i].split(",")
+            x[i]=[normalize_ingredient_name(e) for e in x[i]]
+            x[i]=" ".join(x[i]).lower()
+        return x
+
+                
         return [" ".join(i.split(",")).lower() for i in x]
 
     def preprocess_time(self,x):
@@ -230,3 +249,55 @@ def get_all_recipes():
         return pd.DataFrame()  
 
 
+def normalize_ingredient_name(name):
+
+    name = name.strip().lower()
+    words = name.split()
+
+    # Only singularize last word (usually the noun)
+    if words:
+        words[-1] = p.singular_noun(words[-1]) or words[-1]
+    return " ".join(words)
+
+
+
+def generate_verification_code():
+    return str(random.randint(100000, 999999))
+
+def send_verification_email(email, code):
+    subject = 'Verify Your Email Address - YourAppName'
+    from_email = settings.DEFAULT_FROM_EMAIL
+    to = [email]
+
+    context = {
+        'code': code,
+        'support_email': 'zynoverse02@gmail.com',
+        'app_name': 'Ai based Recipe App',
+    }
+
+    # Render HTML template with context
+    html_content = render_to_string('verification_email.html', context)
+
+    # Plain text fallback
+    text_content = f"Your verification code is: {code}\nIf you didn't request this, please ignore this email."
+
+    msg = EmailMultiAlternatives(subject, text_content, from_email, to)
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
+def generate_reset_code():
+    return str(random.randint(100000, 999999))
+
+def send_reset_email(email, code):
+    subject = "Password Reset Code"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    to = [email]
+    
+    # Render HTML template with context
+    html_content = render_to_string("reset_password_email.html", {"code": code})
+    text_content = f"Your password reset code is: {code}"
+
+    # Create email
+    email_message = EmailMultiAlternatives(subject, text_content, from_email, to)
+    email_message.attach_alternative(html_content, "text/html")
+    email_message.send()

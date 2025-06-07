@@ -28,7 +28,10 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.db.models import Case, When
-from .utils import Preprocess
+from .utils import (
+    Preprocess,normalize_ingredient_name,generate_verification_code,send_verification_email,
+    generate_reset_code,send_reset_email
+    )
 from .AI import start,recommend_similar_recipes,generate_recipe_by_ings
 
 
@@ -40,7 +43,33 @@ class RegisterUserView(generics.CreateAPIView):
     queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
-    
+
+
+class ResendVerificationCodeAPIView(APIView):
+    permission_classes = []  # Or AllowAny if you want
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.email_verified:
+            return Response({"message": "Email is already verified."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate new verification code and save it
+        code = generate_verification_code()
+        user.verification_code = code
+        user.save()
+
+        # Send verification email
+        send_verification_email(user.email, code)
+
+        return Response({"message": "Verification code resent successfully."})
     
     
 class LoginView(APIView):
@@ -52,7 +81,6 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-
 User = get_user_model()
 
 class GoogleLoginAPIView(APIView):
@@ -60,12 +88,12 @@ class GoogleLoginAPIView(APIView):
 
     def post(self, request):
         token = request.data.get('id_token')
+        phone = request.data.get('phone')  # Collect from frontend
 
-        if not token:
-            return Response({'error': 'ID token is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not token or not phone:
+            return Response({'error': 'ID token and phone are required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verify token using Google
             idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_CLIENT_ID)
 
             email = idinfo.get('email')
@@ -74,14 +102,23 @@ class GoogleLoginAPIView(APIView):
             if not email:
                 return Response({'error': 'Email not found in Google token'}, status=400)
 
+            # Check if phone already used by someone else
+            if User.objects.filter(phone=phone).exclude(email=email).exists():
+                return Response({'error': 'Phone number already in use'}, status=400)
+
             # Create or get user
             user, created = User.objects.get_or_create(email=email, defaults={
                 'username': f"{email.split('@')[0]}_{User.objects.count()}",
-                'phone': '0000000000',  # default/fake phone - you can update later
-
+                'phone': phone,
+                'email_verified': True,  # ✅ TRUST GOOGLE
+                'is_active': True 
             })
 
-            # Generate tokens
+            # If user exists but phone is not set, update it
+            if not created and not user.phone:
+                user.phone = phone
+                user.save()
+
             refresh = RefreshToken.for_user(user)
             return Response({
                 'refresh': str(refresh),
@@ -89,13 +126,111 @@ class GoogleLoginAPIView(APIView):
                 'user': {
                     'username': user.username,
                     'email': user.email,
+                    'phone': user.phone,
                 }
             })
 
         except ValueError:
             return Response({'error': 'Invalid Google token'}, status=status.HTTP_400_BAD_REQUEST)
+        
 
-    
+
+class ResendResetCodeAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+            code = generate_reset_code()
+            user.reset_code = code
+            user.save()
+
+            send_reset_email(email, code)
+
+            return Response({"message": "Reset code resent successfully."}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
+User = get_user_model()
+
+class VerifyEmailAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+
+        try:
+            user = User.objects.get(email=email)
+            if user.verification_code == code:
+                user.email_verified = True
+                user.is_active = True
+                user.verification_code = None  # Clear code
+                user.save()
+                return Response({'message': 'Email verified successfully'}, status=200)
+            else:
+                return Response({'error': 'Invalid code'}, status=400)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=404)
+        
+
+class RequestPasswordResetAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email)
+            code = generate_reset_code()
+            user.reset_code = code
+            user.save()
+            send_reset_email(user.email, code)
+            return Response({"message": "Reset code sent to email"}, status=200)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+        
+
+class CheckResetCodeAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+
+        if not email or not code:
+            return Response({'error': 'Email and code are required.'}, status=400)
+
+        try:
+            user = User.objects.get(email=email)
+            if user.reset_code == code:
+                return Response({'message': 'Reset code is valid.'}, status=200)
+            else:
+                return Response({'error': 'Invalid reset code.'}, status=400)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=404)
+
+class ConfirmResetCodeAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        new_password = request.data.get('new_password')
+
+        try:
+            user = User.objects.get(email=email)
+            if user.reset_code == code:
+                user.set_password(new_password)
+                user.reset_code = None
+                user.save()
+                return Response({"message": "Password reset successful"}, status=200)
+            else:
+                return Response({"error": "Invalid reset code"}, status=400)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]  
@@ -608,11 +743,9 @@ class RecipeFilteredByUserPreferenceView(APIView):
         # Apply user preferences filtering
         if preferences.dietary_restrictions.exists():
             queryset = queryset.filter(dietary_restrictions__in=preferences.dietary_restrictions.all())
-            print(queryset)
 
         if preferences.preferred_cuisines.exists():
             queryset = queryset.filter(cuisine__in=preferences.preferred_cuisines.all())
-            print(queryset)
 
         # Optional nutrient filtering can be added if recipe links to nutrients
 
@@ -623,9 +756,16 @@ class RecipeFilteredByUserPreferenceView(APIView):
 
 class RecipeSimilarityView(APIView):
     def post(self, request):
-        user_ingredients = request.data.get('ingredients')  # expecting list like ["tomato beetroot"]
+        user_ingredients = request.data.get('ingredients')  
         if not user_ingredients:
             return Response({"error": "Missing ingredients"}, status=400)
+        if "," in user_ingredients:
+            user_ingredients=user_ingredients.split(",")
+            user_ingredients="".join([normalize_ingredient_name(i) for i in user_ingredients]).lower()
+        else:
+            user_ingredients=normalize_ingredient_name(user_ingredients)
+
+            
         
         recipes = generate_recipe_by_ings([user_ingredients], request=request)
         return Response(recipes)

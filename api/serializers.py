@@ -20,16 +20,22 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
+        from .utils import generate_verification_code, send_verification_email
+
+        code = generate_verification_code()
+
         user = CustomUser.objects.create_user(
             email=validated_data['email'],
             username=validated_data['username'],
             phone=validated_data['phone'],
-            password=validated_data['password']
+            password=validated_data['password'],
+            is_active=False,  # Prevent login until verified
+            verification_code=code
         )
+
+        send_verification_email(user.email, code)
         return user
-    
-    
-    
+
     
 
 class LoginSerializer(serializers.Serializer):
