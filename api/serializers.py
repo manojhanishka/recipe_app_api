@@ -14,10 +14,14 @@ from .models import (Recipe, Ingredient, Instruction, NutritionalInformation,
 
 
 class UserSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'email', 'phone', 'profile_pic', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
     def create(self, validated_data):
         from .utils import generate_verification_code, send_verification_email
@@ -27,7 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
         user = CustomUser.objects.create_user(
             email=validated_data['email'],
             username=validated_data['username'],
-            phone=validated_data['phone'],
+            phone=validated_data.get('phone'),  # Use get() to avoid KeyError
             password=validated_data['password'],
             is_active=False,  # Prevent login until verified
             verification_code=code
@@ -36,7 +40,6 @@ class UserSerializer(serializers.ModelSerializer):
         send_verification_email(user.email, code)
         return user
 
-    
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
