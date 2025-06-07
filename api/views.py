@@ -108,6 +108,9 @@ class GoogleLoginAPIView(APIView):
                 'is_active': True 
             })
 
+            if created:
+                user.save()
+
 
             refresh = RefreshToken.for_user(user)
             return Response({
