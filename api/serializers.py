@@ -93,9 +93,18 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         fields = ['username', 'phone', 'profile_pic', 'password']
 
     def update(self, instance, validated_data):
+        # Update individual fields if provided
+        if 'username' in validated_data:
+            instance.username = validated_data['username']
+        if 'phone' in validated_data:
+            instance.phone = validated_data['phone']
+        if 'profile_pic' in validated_data:
+            instance.profile_pic = validated_data['profile_pic']
         if 'password' in validated_data:
-            validated_data['password'] = make_password(validated_data['password'])  # Hash password
-        return super().update(instance, validated_data)
+            instance.password = make_password(validated_data['password'])
+
+        instance.save()
+        return instance
     
     
 # New serializers for related models
