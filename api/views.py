@@ -227,7 +227,7 @@ class ConfirmResetCodeAPIView(APIView):
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]  
-    parser_classes = [MultiPartParser, FormParser] 
+    parser_classes = [MultiPartParser, FormParser,JSONParser] 
 
     def get(self, request):
         serializer = UserProfileSerializer(request.user, context={'request': request})
