@@ -232,16 +232,32 @@ class UserProfileView(APIView):
     def get(self, request):
         serializer = UserProfileSerializer(request.user, context={'request': request})
         return Response(serializer.data)
-
+    
     def put(self, request):
         user = request.user
+        print("👤 User instance:", user)
+        print("📦 Data:", request.data)
+
         serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
 
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Profile updated successfully", "data": serializer.data})
+            print("✅ Serializer is valid")
+            updated_user = serializer.update(user, serializer.validated_data)
+
+            # Refresh the instance to reflect DB changes
+            updated_user.refresh_from_db()
+
+            # Serialize and return
+            response_serializer = UserProfileSerializer(updated_user, context={'request': request})
+            print("📤 Final serialized data:", response_serializer.data)
+
+            return Response({"message": "Profile updated successfully", "data": response_serializer.data})
+
+        print("❌ Serializer errors:", serializer.errors)
         return Response(serializer.errors, status=400)
-    
+
+
+
 
 class ProfileImageListView(APIView):
     authentication_classes = []

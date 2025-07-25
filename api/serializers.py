@@ -67,12 +67,12 @@ class LoginSerializer(serializers.Serializer):
         }
         
         
-        
+from django.contrib.auth import get_user_model
+
 User = get_user_model()
 
 class UserProfileSerializer(serializers.ModelSerializer):
     profile_pic = serializers.SerializerMethodField()
-
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'phone', 'profile_pic']
@@ -86,26 +86,36 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False)  # Optional password update
+    password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
-        model = User
+        model = User  # ✅ this is key
         fields = ['username', 'phone', 'profile_pic', 'password']
 
-    def update(self, instance, validated_data):
-        # Update individual fields if provided
-        if 'username' in validated_data:
-            instance.username = validated_data['username']
-        if 'phone' in validated_data:
-            instance.phone = validated_data['phone']
-        if 'profile_pic' in validated_data:
-            instance.profile_pic = validated_data['profile_pic']
-        if 'password' in validated_data:
-            instance.password = make_password(validated_data['password'])
+    def validate_username(self, value):
+        user = self.instance
+        if User.objects.exclude(pk=user.pk).filter(username=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
 
+    def validate_phone(self, value):
+        user = self.instance
+        if value and User.objects.exclude(pk=user.pk).filter(phone=value).exists():
+            raise serializers.ValidationError("This phone number is already taken.")
+        return value
+
+    def update(self, instance, validated_data):
+        print("✅ Validated data in update():", validated_data)
+        instance.username = validated_data.get('username', instance.username)
+        instance.phone = validated_data.get('phone', instance.phone)
+        instance.profile_pic = validated_data.get('profile_pic', instance.profile_pic)
+        if 'password' in validated_data:
+            instance.set_password(validated_data['password'])  # safer
         instance.save()
         return instance
-    
+
+
+
     
 # New serializers for related models
 class CuisineSerializer(serializers.ModelSerializer):

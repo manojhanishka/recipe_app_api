@@ -6,22 +6,23 @@ from django.conf import settings
 from cloudinary.models import CloudinaryField
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, username, phone, password=None, **extra_fields):
+    def create_user(self, email, username, phone=None, password=None, **extra_fields):
         if not email:
             raise ValueError("Email is required")
         if not username:
             raise ValueError("Username is required")
-        
+
         email = self.normalize_email(email)
         user = self.model(email=email, username=username, phone=phone, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, username, phone, password=None, **extra_fields):
+    def create_superuser(self, email, username, password=None, phone=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, username, phone, password, **extra_fields)
+        return self.create_user(email=email, username=username, phone=phone, password=password, **extra_fields)
+
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, unique=True)
