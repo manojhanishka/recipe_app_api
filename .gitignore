@@ -1,9 +1,6 @@
 # Ignore Python cache files
-__pycache__/
-*.py[cod]
+*py*
+migrations/
 
 # Ignore environment files
 .env
-
-__pycache__/
-*.pyc

@@ -9,8 +9,8 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
-p = inflect.engine()
-
+import spacy
+nlp = spacy.load("en_core_web_sm")
 
 class Preprocess:
 
@@ -250,15 +250,14 @@ def get_all_recipes():
 
 
 def normalize_ingredient_name(name):
-
     name = name.strip().lower()
     words = name.split()
 
-    # Only singularize last word (usually the noun)
     if words:
-        words[-1] = p.singular_noun(words[-1]) or words[-1]
-    return " ".join(words)
+        last_word = nlp(words[-1])[0].lemma_
+        words[-1] = last_word
 
+    return " ".join(words)
 
 
 def generate_verification_code():
