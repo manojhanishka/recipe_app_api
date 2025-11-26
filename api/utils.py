@@ -2,16 +2,11 @@ import pandas as pd
 import re
 from .models import Recipe,CustomUser,SavedRecipe,Ingredient
 import numpy as np # Replace with your actual app name
-import inflect
 import random
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-
-import spacy
-nlp = spacy.load("en_core_web_sm")
-
 class Preprocess:
 
     def __preprocess_ingredients(self,x):
@@ -249,15 +244,39 @@ def get_all_recipes():
         return pd.DataFrame()  
 
 
-def normalize_ingredient_name(name):
+def normalize_ingredient_name(name: str) -> str:
     name = name.strip().lower()
-    words = name.split()
 
-    if words:
-        last_word = nlp(words[-1])[0].lemma_
-        words[-1] = last_word
+    # Words that always stay the same (uncountable recipe ingredients)
+    exceptions = {
+        "fish": "fish",
+        "rice": "rice",
+        "pasta": "pasta",
+        "water": "water",
+        "milk": "milk",
+        "salt": "salt",
+        "pepper": "pepper",
+        "cheese": "cheese",
+        "bread": "bread",
+        "beef": "beef",
+        "chicken": "chicken",
+        "mutton": "mutton"
+    }
 
-    return " ".join(words)
+    # If the ingredient is uncountable, return as is
+    if name in exceptions:
+        return exceptions[name]
+
+    # Words ending in “y” → “ies”
+    if name.endswith("y") and len(name) > 1 and name[-2] not in "aeiou":
+        return name[:-1] + "ies"
+
+    # Words ending in s, x, z, ch, sh → add “es”
+    if name.endswith(("s", "x", "z", "ch", "sh")):
+        return name + "es"
+
+    # Default → add “s”
+    return name + "s"
 
 
 def generate_verification_code():
